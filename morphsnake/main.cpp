@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include "filter.h"
 #include "morphsnake.h"
@@ -33,25 +34,45 @@ cv::Mat ReadMatFromTxt(std::string filename, int rows, int cols)
 // 값을 1로 두고, threshold 값을 건드리는게 더 좋아보인다.
 
 int main() {
+	cv::Mat img = cv::imread("color_.png");
+	//cv::Mat img = cv::imread("body.png", cv::IMREAD_GRAYSCALE);
 
 	Filter filter;
 	MorphSnake ms;
-	cv::Mat img_in = cv::imread("body.png");
-	cv::Mat bgr[3]; cv::split(img_in, bgr);
-	cv::Mat img = bgr[2];
-	img.convertTo(img, CV_64FC1, 1./255.);
+
+	cv::Mat bgr[3]; cv::split(img, bgr);
+
+	double alpha = 4000;
+	double sigma = 3;
+	int bgr_or_gray = 0;
+	int iteration = 200;
+	int smoothing = 5;
+	double threshold = 0.3;
+	int ballon = 1;
+	double downscale = 4;
+
+
+	cv::Mat gray;
+	if (bgr_or_gray < 3) {
+		gray = bgr[bgr_or_gray];
+	}
+	else {
+		cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
+		cv::cvtColor(img, gray, cv::COLOR_RGB2GRAY);
+	}
+	
+	gray.convertTo(img, CV_64FC1, 1./255.);
 
 	//cv::Mat origin_gimg = ReadMatFromTxt("gimg.txt", img.rows, img.cols);
-	cv::Mat	gimg = filter.inverse_gaussian_gradient(img, 4000, 3, 25);
+	cv::Mat	gimg = filter.inverse_gaussian_gradient(img, alpha, sigma, 25);
 	
 	
-	
-	double downscale = 2;
 	cv::Mat init_ls = filter.make_init_ls({gimg.rows/ downscale, gimg.cols/ downscale},
 		{img.rows / ( downscale * 2), img.cols / ( downscale * 2 ) }, 
 		img.rows  / (10 * downscale) );
 	
-	cv::Mat mask = ms.morphological_geodesic_active_contour(gimg, 300, init_ls, 5, 0.3, 1, downscale);
+	cv::Mat mask = ms.morphological_geodesic_active_contour(gimg, iteration, 
+		init_ls, smoothing, threshold, ballon, downscale);
 	
 	cv::imshow("mask", mask);
 	cv::waitKey(0);

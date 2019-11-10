@@ -1,7 +1,9 @@
 #include <string>   // for type2str >> remove
 #include <cmath>
+#include <iostream>
 
 #include <opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
 
 #include "filter.h"
 
@@ -46,7 +48,7 @@ cv::Mat Filter::inverse_gaussian_gradient(const cv::Mat & image, double alpha, d
 	cv::Mat img = image;
 	cv::Mat blur;
 	int rows = img.rows, cols = img.cols;
-
+	
 	cv::Mat gx, gy;
 	cv::GaussianBlur(img, blur, cv::Size(k_size, k_size), sigma);
 
@@ -60,7 +62,6 @@ cv::Mat Filter::inverse_gaussian_gradient(const cv::Mat & image, double alpha, d
 			output.at<double>(i, j) = 1. / sqrtl(1. + alpha * val);
 		}
 	}
-
 	return output;
 }
 
